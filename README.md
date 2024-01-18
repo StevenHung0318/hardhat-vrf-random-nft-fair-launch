@@ -1,6 +1,6 @@
 # The NFT 100% Fair Launch Repo
 
-We go through creating a way of NFT fair lauch function, but the checking mechanism will cause the gas use to be very high, it is only suitable for NFT projects with a small supply.
+I creating a way of NFT fair lauch function (using chainlinkVRF), but the checking mechanism will cause the gas use to be very high, it is only suitable for NFT projects with a small supply.
 
 # Getting Started
 
