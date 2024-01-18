@@ -13,7 +13,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if (chainId == 31337) {
         // create VRFV2 Subscription
         vrfCoordinatorV2Address = (await deployments.get("VRFCoordinatorV2Mock")).address
-        console.log("address:", vrfCoordinatorV2Address)
         vrfCoordinatorV2Mock = await ethers.getContractAt(
             "VRFCoordinatorV2Mock",
             vrfCoordinatorV2Address,

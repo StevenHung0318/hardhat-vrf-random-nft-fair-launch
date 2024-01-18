@@ -17,10 +17,10 @@ contract RandomNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     bool public _revealed = false;
 
     // Constants
-    uint256 public constant MAX_SUPPLY = 10;
+    uint256 public constant MAX_SUPPLY = 5;
     uint256 public mintPrice = 0.001 ether;
-    uint256 public maxBalance = 10;
-    uint256 public maxMint = 10;
+    uint256 public maxBalance = 5;
+    uint256 public maxMint = 5;
 
     // Chainlink VRF Variables
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
@@ -61,27 +61,6 @@ contract RandomNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
         setNotRevealedURI(initNotRevealedUri);
     }
 
-    //--------------------------------------------------------------------------------------------------//
-    //--------------------------------- Let user choose tokenID to mint --------------------------------//
-    //--------------------------------------------------------------------------------------------------//
-
-    // minter can choose the tokenId to mint by themself -> a relatively fair approach
-    function ChooseToMintNFT(uint256 tokenToMint) public payable {
-        require(_isSaleActive, "Sale must be active to mint NFT");
-        require(balanceOf(msg.sender) + 1 <= maxBalance, "Sale would exceed max balance");
-        require(1 * mintPrice <= msg.value, "Not enough ether sent");
-        require(1 <= maxMint, "Can only mint 1 token at a time");
-        require(!isTokenMinted[tokenToMint], "Token ID already minted");
-
-        _safeMint(msg.sender, tokenToMint);
-        isTokenMinted[tokenToMint] = true; // Mark tokenID as minted
-    }
-
-    // User can check the tokenID is Available or not
-    function isTokenAvailable(uint256 tokenId) public view returns (string memory) {
-        return isTokenMinted[tokenId] ? "This token has been minted" : "This token is available";
-    }
-
     // Users can query all tokenIDs that have not been mint yet
     function getAvailableTokens() public view returns (uint256[] memory) {
         uint256[] memory availableTokens = new uint256[](MAX_SUPPLY);
@@ -107,7 +86,7 @@ contract RandomNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
     //---------------------- Use chainlinkVRF to get random tokenID to mint ----------------------------//
     //--------------------------------------------------------------------------------------------------//
 
-    // 1. get the random tokenid from chainlinkVRF to mint NFT
+    // 1. get a randomword
     function requestNft() public payable returns (uint256 requestId) {
         if (msg.value < mintPrice) {
             revert RandomNFT__ETH_not_enough();
@@ -123,11 +102,27 @@ contract RandomNFT is ERC721Enumerable, Ownable, VRFConsumerBaseV2 {
         emit NftRequested(requestId, msg.sender);
     }
 
-    // 2. get the random tokenid from chainlinkVRF to mint NFT
+    // 2. get the random tokenid from chainlinkVRF & availableTokens to mint NFT
     function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
-        uint256 randomTokenId = randomWords[0] % MAX_SUPPLY;
+        // Ensure randomWords is not empty
+        require(randomWords.length > 0, "No random words provided");
+
+        // Get the available tokens
+        uint256[] memory availableTokens = getAvailableTokens();
+
+        // Ensure availableTokens is not empty
+        require(availableTokens.length > 0, "No available tokens");
+
+        // Use the first random word to determine the index
+        uint256 randomIndex = randomWords[0] % availableTokens.length;
+
+        // Choose the tokenID from available tokens
+        uint256 randomTokenId = availableTokens[randomIndex];
+
+        // Perform the minting
         address minter = s_requestIdToSender[requestId];
         _safeMint(minter, randomTokenId);
+        isTokenMinted[randomTokenId] = true; // Mark the tokenID as minted
         emit NftMinted(randomTokenId, minter);
     }
 
